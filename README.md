@@ -16,7 +16,7 @@ When you like it and have created something with this template, let me know and 
 5. Like it :-)
 
 
-## Usage
+## How to use it
 ```shell
 Usage: ./ultimate-shell-template.sh [-g] [-r <num>] -f <file> [<file2> [<directory>]...]
        ./ultimate-shell-template.sh [-g] -c <file> [<file2> [<directory>]...]
