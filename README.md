@@ -9,9 +9,11 @@ When you like it and have created something with this template, let me know and 
 
 ## How to use it for coding
 
-1. Change all the credit variables `MY_*`
-2. Add your stuff to `$REQUIRED_CUS_BIN`
-3. Edit `my_custom_action()` function
+1. rename `ultimate-shell-template.sh` to whatever you want
+2. Change all the credit variables `MY_*`
+3. Add your stuff to `$REQUIRED_CUS_BIN` variable
+4. Edit `my_custom_action()` function
+5. Like it :-)
 
 
 ## Usage
