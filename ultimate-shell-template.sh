@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -u
 #
 # This is a template you can use for all of your shell scripts.
 # It already has many arguments and pre-checks built-int.
@@ -83,10 +83,7 @@ HAS_REC=0
 # 2: ...
 LVL_REC=0
 
-# Work on files and files inside directories
-# or work on directories only.
-HAS_F_OPT=0
-HAS_D_OPT=0
+
 
 
 
@@ -297,43 +294,6 @@ remove_empty_lines() {
 
 
 #
-# Print text to stdout on CLI
-#
-# @param  string	Single-/multiline string.
-# @output string
-print_ok_cli() {
-	printf "${*}%s\n" "" >&2
-}
-
-#
-# Print text to stderr on CLI
-#
-# @param  string	Single-/multiline string.
-# @output string
-print_err_cli() {
-	printf "${*}%s\n" "" >&2
-}
-
-
-#
-# Print text to GUI ok message
-#
-# @param  string	Single-/multiline string.
-print_ok_gui() {
-	$(which zenity) --title="${MY_NAME}" --info --text="${*}"
-}
-
-#
-# Print text to GUI error message
-#
-# @param  string	Single-/multiline string.
-print_err_gui() {
-	$(which zenity) --title="${MY_NAME}" --error --text="${*}"
-}
-
-
-
-#
 # Get all files newline separated from multiple files or folders
 #
 gather_files_line_by_line() {
@@ -371,6 +331,63 @@ gather_files_line_by_line() {
 }
 
 
+################################################################################
+#
+# OUTPUT FUNCTIONS
+#
+################################################################################
+
+#
+# Print text to stdout on CLI
+#
+# @param  string	Single-/multiline string.
+# @output string
+print_ok_cli() {
+	printf "${*}%s\n" "" >&2
+}
+
+#
+# Print text to stderr on CLI
+#
+# @param  string	Single-/multiline string.
+# @output string
+print_err_cli() {
+	printf "${*}%s\n" "" >&2
+}
+
+
+#
+# Print text to GUI ok message
+#
+# @param  string	Single-/multiline string.
+print_ok_gui() {
+	$(which zenity) --title="${MY_NAME}" --info --text="${*}"
+}
+
+#
+# Print text to GUI error message
+#
+# @param  string	Single-/multiline string.
+print_err_gui() {
+	$(which zenity) --title="${MY_NAME}" --error --text="${*}"
+}
+
+
+print_ok() {
+	if [ "${HAS_GUI}" = "1" ]; then
+		print_ok_gui "${*}"
+	else
+		print_ok_cli "${*}"
+	fi
+}
+print_err() {
+	if [ "${HAS_GUI}" = "1" ]; then
+		print_err_gui "${*}"
+	else
+		print_err_cli "${*}"
+	fi
+}
+
 
 
 ################################################################################
@@ -403,7 +420,7 @@ my_custom_action() {
 	_file_out="${1}.png"
 
 	# Get only stderr
-	_err="$( $(which convert) "${_file_in}" "${_file_out}" 2>&1 >/dev/null )"
+	$(which convert) "${_file_in}" "${_file_out}" > /dev/null 2>&1
 	_ret=$?
 
 	# -------------- end of Your code here -----------
@@ -672,13 +689,17 @@ while [ $# -gt 0  ]; do
 				fi
 			done
 
+			#
+			# TODO: if only one arg present, use its filename as target file
+			#
+
 			# Create archive
 			OUTPUT_FILE="${HOME}/${MY_NAME}-$(date '+%Y-%m-%d__%H-%M-%S').tar.gz"
 			COMMAND="tar -C ${HOME} -cf - ${ARGS} 2>/dev/null | gzip > ${OUTPUT_FILE}"
 			eval "${COMMAND}"
 
 			#
-			# TODO: Add error checking here
+			# TODO: Add error checking here for above command
 			#
 
 			if [ "${HAS_GUI}" = "1" ]; then
