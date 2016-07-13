@@ -55,7 +55,8 @@ REQUIRED_CUS_BIN="convert"
 #
 # Default required binaries
 #
-REQUIRED_BIN="sed wc awk tar gzip find"
+#REQUIRED_BIN="sed wc awk tar gzip find"
+REQUIRED_BIN="grep sed tar gzip find"
 REQUIRED_GUI_BIN="zenity"
 
 EXIT_ERR=1
@@ -85,9 +86,6 @@ LVL_REC=0
 
 
 
-
-
-#SCRIPT_PATH="$( $(which realpath) "${0}"  2>/dev/null )"
 
 
 #
@@ -237,6 +235,19 @@ check_gui_requirements() {
 }
 
 
+################################################################################
+#
+# WRAPPER SYSTEM FUNCTIONS
+#
+################################################################################
+
+run() {
+	_cmd="${1}"
+	_pth="${PATH}"
+	sh -c "LANG=C LC_ALL=C PATH=\"${_pth}\" ${_cmd}"
+}
+
+
 
 ################################################################################
 #
@@ -247,21 +258,32 @@ check_gui_requirements() {
 #
 # Divide two numbers.
 #
-# @param  float/integer
-# @param  float/integer
-# @output float/integer
+# @param  integer
+# @param  integer
+# @output integer
 div() {
-	echo | $(which awk) -v "a=${1}" -v "b=${2}" '{print a / b}'
+	#echo | $(which awk) -v "a=${1}" -v "b=${2}" '{print a / b}'
+	#echo | sh -c "awk -v 'a=${1}' -v 'b=${2}' '{print a / b}'"
+	#echo | run "awk -v 'a=${1}' -v 'b=${2}' '{print a / b}'"
+	_num1="${1}"
+	_num2="${2}"
+	echo "$(( _num1 / _num2 ))"
 }
+
 
 #
 # Divide two numbers.
 #
-# @param  float/integer
-# @param  float/integer
-# @output float/integer
+# @param  integer
+# @param  integer
+# @output integer
 mul() {
-	echo | $(which awk) -v "a=${1}" -v "b=${2}" '{print a * b}'
+	#echo | $(which awk) -v "a=${1}" -v "b=${2}" '{print a * b}'
+	#echo | sh -c "awk -v 'a=${1}' -v 'b=${2}' '{print a * b}'"
+	#echo | run "awk -v 'a=${1}' -v 'b=${2}' '{print a * b}'"
+	_num1="${1}"
+	_num2="${2}"
+	echo "$(( _num1 * _num2 ))"
 }
 
 #
@@ -289,7 +311,8 @@ isint(){
 # @output string
 remove_empty_lines() {
 	_lines="${1}"
-	echo "${_lines}" | $(which sed) '/^\s*$/d'
+	#echo "${_lines}" | $(which sed) '/^\s*$/d'
+	echo "${_lines}" | run "sed '/^[[:space:]]*$/d'"
 }
 
 
@@ -298,7 +321,11 @@ remove_empty_lines() {
 #
 gather_files_line_by_line() {
 	# Convert separated arguments into newline separation
-	_args="$( echo "${*}" | $(which sed) "s/${ARG_SEPARATOR}/\n/g" )"
+	#_args="$( echo "${*}" | $(which sed) "s/${ARG_SEPARATOR}/\n/g" )"
+	#_args="$( echo "${*}" | sh -c "sed 's/${ARG_SEPARATOR}/\n/g'" )"
+	_args="$( echo "${*}" | run "sed 's/${ARG_SEPARATOR}/\n/g'" )"
+
+
 
 	_all_files=""
 
@@ -337,55 +364,44 @@ gather_files_line_by_line() {
 #
 ################################################################################
 
-#
-# Print text to stdout on CLI
-#
-# @param  string	Single-/multiline string.
-# @output string
-print_ok_cli() {
-	printf "${*}%s\n" "" >&2
-}
 
 #
-# Print text to stderr on CLI
+# Output text to stdout or zenity info message
 #
-# @param  string	Single-/multiline string.
-# @output string
-print_err_cli() {
-	printf "${*}%s\n" "" >&2
-}
-
-
-#
-# Print text to GUI ok message
-#
-# @param  string	Single-/multiline string.
-print_ok_gui() {
-	$(which zenity) --title="${MY_NAME}" --info --text="${*}"
-}
-
-#
-# Print text to GUI error message
-#
-# @param  string	Single-/multiline string.
-print_err_gui() {
-	$(which zenity) --title="${MY_NAME}" --error --text="${*}"
-}
-
-
+# @param	string	Single-/multiline string.
+# @output	string
 print_ok() {
-	if [ "${HAS_GUI}" = "1" ]; then
-		print_ok_gui "${*}"
+	if [ "${HAS_GUI}" = "1" ] && command -v "zenity" >/dev/null 2>&1; then
+		sh -c "zenity --title=\"${MY_NAME}\" --info --text=\"${*}\" 2>/dev/null"
 	else
-		print_ok_cli "${*}"
+		printf "${*}%s\n" ""
 	fi
 }
+
+#
+# Output text to stderr or zenity error message
+#
+# @param	string	Single-/multiline string.
+# @output	string
 print_err() {
-	if [ "${HAS_GUI}" = "1" ]; then
-		print_err_gui "${*}"
+	if [ "${HAS_GUI}" = "1" ] && command -v "zenity" >/dev/null 2>&1; then
+		sh -c "zenity --title=\"${MY_NAME}\" --error --text=\"${*}\" 2>/dev/null"
 	else
-		print_err_cli "${*}"
+		printf "${*}%s\n" "" >&2
 	fi
+}
+
+
+input_password() {
+	_pass=""
+	if [ "${HAS_GUI}" = "1" ] && command -v "zenity" >/dev/null 2>&1; then
+		_pass="$(sh -c "zenity --title=\"${MY_NAME}\" --password 2>/dev/null")"
+	else
+		stty -echo
+		read  -r _pass
+		stty echo
+	fi
+	printf "%s\n" "${_pass}"
 }
 
 
@@ -475,7 +491,7 @@ main_gui() {
 		_files="$( gather_files_line_by_line "${*}" )"
 
 		# Count all files
-		_total="$( echo "${_files}" | $(which wc) -l  | $(which sed) 's/^[[:space:]]*//g' )"
+		_total="$( echo "${_files}" | run "grep -c ''" )"
 
 		# Current counter
 		i=0
@@ -567,7 +583,7 @@ main_cli() {
 	_files="$( gather_files_line_by_line "${*}" )"
 
 	# Count all files
-	_total="$( echo "${_files}" | $(which wc) -l  | $(which sed) 's/^[[:space:]]*//g' )"
+	_total="$( echo "${_files}" | run "grep -c ''" )"
 
 	# Current counter
 	i=0
