@@ -7,3 +7,4 @@ before_script:
 
 script:
   - shellcheck --shell=sh ultimate-shell-template.sh
+  - shellcheck --shell=sh ultimate-thunar-template.sh
