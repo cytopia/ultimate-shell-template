@@ -510,12 +510,18 @@ compress_files() {
 	'
 	for f in ${_files}; do
 		if [ -f "${f}" ] || [ -d "${f}" ]; then
+
+			# Note: all incoming files are in the same directory
+			# that's why the dirname is always the same
 			_parentdir="$( dirname "${f}" )"
 			_filename="$( basename "${f}" )"
+
 			# Get arguments separated by " to prepare for compression.
 			if [ "${_concat}" = "" ]; then
+				# Quote files (just in case they contain a space)
 				_concat="\"${_filename}\""
 			else
+				# Concat and quote files (just in case they contain a space)
 				_concat="${_concat} \"${_filename}\""
 			fi
 		else
@@ -535,22 +541,27 @@ compress_files() {
 	_total="$( echo "${_files}" | run "grep -c ''" )"
 
 
-	# if it is only 1 file, we can create the archive with relative path names
+	# If it is only 1 input file, we can create the archive with relative path names
 	# and also store it at the same location where it has been created
 	if [ "${_total}" = "1" ]; then
 		# Output archive name
-		_filename="$( echo "${_files}" | sed 's|/*$||' )" # Remove trailing slash from dir
-		_output_file="${_parentdir}/${_filename}-$(date '+%Y-%m-%d__%H-%M-%S').tar.gz"
+		# sed removes trailing directory slash
+		_filename="$( echo "${_files}" | run "sed 's|/*$||'" )-$(date '+%Y-%m-%d__%H-%M-%S').tar.gz"
+		_output_file="${_parentdir}/${_filename}"
+
+		# 1 input file
 		_input_files="\"${_files}\""
 
-		#COMMAND="tar -C \"${_parentdir}\" -czf \"${_output_file}\" \"${_files}\""
+	# Multiple input files: quoted and concatenated
 	else
 		# Output archive name
-		_output_file="${_parentdir}/${MY_NAME}-$(date '+%Y-%m-%d__%H-%M-%S').tar.gz"
-		_input_files="${_concat}"
+		_filename="${MY_NAME}-$(date '+%Y-%m-%d__%H-%M-%S').tar.gz"
+		_output_file="${_parentdir}/${_filename}"
 
-		#COMMAND="tar -C \"${_parentdir}\" -czf \"${_output_file}\" ${_concat}"
+		# Multiple input files
+		_input_files="${_concat}"
 	fi
+
 	COMMAND="tar -C \"${_parentdir}\" -czf \"${_output_file}\" ${_input_files}"
 
 	if ! run "${COMMAND}"; then
